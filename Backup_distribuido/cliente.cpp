@@ -38,8 +38,7 @@ SocketTest::SocketTest(int port, QString ipp, int Origen, int dir, int clientes,
 
 
 SocketTest::~SocketTest(){
-        QByteArray q;
-        send(q,"desconet ");
+
 
 }
 
@@ -148,7 +147,8 @@ void SocketTest::send(QByteArray q,QString filename){
         }
         else{
             if(d==0){//desconectarse
-                    socket->write(QByteArray("c \n"));
+
+                    qDebug() <<"me desconecto..";
             }
             else{
                if(f==0){ //fin de transmision
@@ -259,8 +259,10 @@ void SocketTest::write(QString filename)
     //QByteArray n;
 
     if(path.isFile()){
+        emit rango(1);
          qDebug() <<filename.split("/").takeLast();
          send("", filename);
+         emit incremento(1);
 
     }
     if(path.isDir()){
@@ -287,13 +289,13 @@ void SocketTest::disconnected()
     QMessageBox msgBox;
     msgBox.setText("Se ha desconectado del servidor!!");
     msgBox.exec();
-    qDebug() << "Disconnected!";
-    socket->close();
+    socket->write(QByteArray("c \n"));
+    //qDebug() << "Disconnected!";
 }
 
 void SocketTest::bytesWritten(qint64 bytes)
 {
-    qDebug() << "We wrote: " << bytes;
+    //qDebug() << "We wrote: " << bytes;
 }
 
 void SocketTest::leer()
@@ -363,6 +365,9 @@ void SocketTest::readyRead()
                          QMessageBox msgBox;
                          msgBox.setText("El servidor ha terminado de realizar el envio..");
                          msgBox.exec();
+
+                         //emit disconnected();
+                         emit b_3();
                          //emit disconnected();
                      }
                      else{

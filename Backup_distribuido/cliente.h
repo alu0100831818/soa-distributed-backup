@@ -20,6 +20,7 @@ signals:
     void rango(int);
     void incremento(int);
     void datos(QString,int);
+    void b_3();
 public slots:
     void Test();
     void connected();

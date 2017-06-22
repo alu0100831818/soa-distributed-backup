@@ -104,6 +104,7 @@ void Backup_distribuido::on_tabWidget_tabBarClicked(int index)
                        connect(cliente,SIGNAL(rango(int)),this,SLOT(Barra_ranfo(int )));
                        connect(cliente,SIGNAL(incremento(int)),this,SLOT(Barra_de_progreso(int)));
                        connect(cliente,SIGNAL(datos(QString,int)),this,SLOT(Datos(QString,int)));
+                       connect(cliente,SIGNAL(b_3()),this,SLOT(close_()));
                        cliente->Test();
                    }
                 }
@@ -111,6 +112,10 @@ void Backup_distribuido::on_tabWidget_tabBarClicked(int index)
         break;
     }
 
+}
+void Backup_distribuido::close_()
+{
+    this->close();
 }
 void Backup_distribuido::datos_cliente(int a){
     ui->textEdit->insertPlainText("cliente: ");
@@ -175,18 +180,25 @@ void Backup_distribuido::on_pushButton_3_clicked()
     msgBox.setText("...");
     if(Servidor==1){
         Servidor=0;
-        if(servidor!=NULL)
+        if(servidor!=NULL){
+            msgBox.setText("El servidor desconectado...");
+            msgBox.exec();
             delete servidor;
-           servidor=NULL;
-        msgBox.setText("El servidor desconectado...");
+           servidor=NULL;}
+
     }
     else{
-        if(cliente != NULL)
-            delete cliente;
-        cliente=NULL;
-        msgBox.setText("Cliente desconectado..");
+        if(cliente != NULL){
+            cliente->disconnected();
+//            msgBox.setText("Cliente desconectado..");
+//            msgBox.exec();
+            //delete cliente;
+            cliente=NULL;
+        }
+
+
     }
-    msgBox.exec();
+
     this->close();
 }
 

@@ -18,6 +18,7 @@ public:
     ~Backup_distribuido();
 public slots:
     void Datos(QString a,int b);
+    void close_();
 
 private slots:
     void on_tabWidget_tabBarClicked(int index);

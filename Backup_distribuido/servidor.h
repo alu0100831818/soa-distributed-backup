@@ -109,5 +109,7 @@ private:
     QPair<QByteArray,QString> actual;
     QTcpSocket *Cliente_o;
     int t;
+    qint16 socketDescriptor_1;
+    qint16 socketDescriptor_2; //del cliente
 };
 #endif // SERVIDOR_H
