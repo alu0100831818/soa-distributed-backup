@@ -449,7 +449,7 @@ void SocketTest::readyRead()
 
                                     size=0;
 
-                                    emit datos("*Archivo que se ha enviado: "+ actual.second + QString::number(file.size()),2);
+                                    emit datos("*Archivo que se ha enviado: "+ actual.second +" "+ QString::number(file.size()),2);
                                     file.close();
                                     //directorio_1->absolutePath() + "/" + QString::number(m_socket->peerPort())+ actual.second
                                     actual.second=name; //ruta absoluta en el servidor
@@ -457,9 +457,6 @@ void SocketTest::readyRead()
                                     qDebug() <<"cerrando fichero.................";
                                     emit incremento(1);
                                 }
-
-
-
 
 
                              }

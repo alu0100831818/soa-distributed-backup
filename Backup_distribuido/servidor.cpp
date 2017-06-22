@@ -158,7 +158,7 @@ SocketThread::SocketThread(QDir* directorio,qintptr descriptor, QQueue<QPair<qin
       m_socketDescriptor(descriptor),
       m_blockSize(0)
 {
-     emit datos("   -Cliente nuevo conectado",2);
+
     socketDescriptor_2= -3;
     t=0;
     AC=Datos_Cliente;
@@ -170,7 +170,11 @@ SocketThread::SocketThread(QDir* directorio,qintptr descriptor, QQueue<QPair<qin
     emit read(1);
     connect(m_socket, SIGNAL(readyRead()),    this, SLOT(onReadyRead()),    Qt::DirectConnection);
     connect(m_socket, SIGNAL(disconnected()),    this, SLOT(onDisconnected()),    Qt::DirectConnection);
-
+    QString g="CONEXION:se ha conectado un cliente-> ";
+    g+= m_socket->peerAddress().toString();
+    g+= " Puerto: " ;
+    g+= QString::number(m_socket->peerPort());
+    emit datos(g,2);
     QPair <qintptr,QTcpSocket*> b;
     b.first=m_socketDescriptor;
     b.second=m_socket;
@@ -409,6 +413,7 @@ void SocketThread::onReadyRead()
                         QString name=directorio_1->absolutePath() + "/" + QString::number(m_socket->peerPort());
                         filename_1=name;
                        qDebug() <<"Me ha lleagdo una solicitud y ha sido aceptada...";
+                       send("","aceptada\n",NULL);
                     }
                     else    //si no estan todos los clientes le decimos que espere
                         send("","wait\n",NULL);
@@ -532,8 +537,9 @@ void SocketThread::onReadyRead()
 
                                         size=0;
 
-                                        emit datos("*Archivo que se ha enviado: "+ actual.second+ QString::number(file.size()),2);
+
                                         file.close();
+                                         emit datos("*Archivo que se ha enviado: "+ actual.second+" "+ QString::number(file.size()),2);
                                         actual.second=name; //ruta absoluta en el servidor
                                         AC->append(actual);
 
@@ -583,7 +589,6 @@ void SocketThread::onDisconnected()
         for(int i=0;i<AC->size();i++){
               QString s=AC->operator [](i).second;
               send("",s,Lista->operator [](j).second);
-              //delay_1(1);
         }
     }
 
