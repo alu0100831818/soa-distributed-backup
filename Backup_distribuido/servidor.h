@@ -10,6 +10,7 @@
 #include <QThread>
  #include <QDataStream>
 #include <QDir>
+ #include <QMutex>
 
 class Server : public QTcpServer
 {
@@ -25,6 +26,7 @@ public slots:
     void lectura_cliente(int k, int cc, QTcpSocket* origen);
     void adios();
     void desconect(int i);
+    void todos();
 signals:
     void datos(QString,int);
     void lectura(int);
@@ -37,6 +39,7 @@ protected:
     void incomingConnection(qintptr handle) Q_DECL_OVERRIDE;
 
 private:
+    QMutex* mutex;
     QString* cadena1;
     QDir directorio;
     qintptr conexion_actual;
@@ -58,7 +61,7 @@ class SocketThread : public QThread
 {
     Q_OBJECT
 public:
-    SocketThread(QDir* directorio, qintptr descriptor, QQueue<QPair<qintptr, QTcpSocket *> > *lista, QQueue <QPair<QByteArray,QString>>*Datos_Cliente, QObject *parent = 0);
+    SocketThread(QDir* directorio, qintptr descriptor, QQueue<QPair<qintptr, QTcpSocket *> > *lista, QQueue <QPair<QByteArray,QString>>*Datos_Cliente, int pp, QObject *parent = 0);
     ~SocketThread();
 
     void leer(void);
@@ -74,6 +77,8 @@ protected:
     void run() Q_DECL_OVERRIDE;
 
 signals:
+
+    void desc_ccdos();
     void datos(QString,int);
     void onFinishRecieved();
     void lectura(int a,int cc,QTcpSocket *);
@@ -83,6 +88,7 @@ signals:
     void rango(int);        //progressbar
     void incremento(int);
     void disconect(int i);
+    void todos();
 
 private slots:
     void onReadyRead();

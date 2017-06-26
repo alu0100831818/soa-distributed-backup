@@ -30,6 +30,7 @@ Server::Server(QHostAddress host, quint16 port, QObject *parent)
       ipp(host),
       puerto(port)
 {
+    mutex=new QMutex;
     Cliente=NULL;
     directorio=QDir::home();
     directorio.mkdir("Servidor_BackUpD");
@@ -40,20 +41,21 @@ Server::Server(QHostAddress host, quint16 port, QObject *parent)
     cliente_conectado=0;
 }
 void Server::desconect(int i){
-    //cuando uno de los sockets creados como origen se desconecta, liberamos la posicion funte.
-    clientes_esperados=50;  //espero muchos, la primera vez que se conecta cliente de envio, machaco valor
-    clientes_conectados=0;
-    cliente_conectado=0;
-
-    directorio=QDir::home();
-    directorio.mkdir("Servidor_BackUpD");
-    directorio.cd("Servidor_BackUpD");
-   //
     QString a;
     if(i==0)
         a= "-------Se ha desconectado un cliente destino--------";
     else{
+          mutex->lock();
         Cliente=NULL;
+        //cuando uno de los sockets creados como origen se desconecta, liberamos la posicion funte.
+        clientes_esperados=50;  //espero muchos, la primera vez que se conecta cliente de envio, machaco valor
+        clientes_conectados=0;
+        cliente_conectado=0;
+
+        directorio=QDir::home();
+        directorio.mkdir("Servidor_BackUpD");
+        directorio.cd("Servidor_BackUpD");
+        mutex->unlock();
         a="---------Se ha desconectado el Cliente Origen---------";
     }
 
@@ -85,47 +87,53 @@ void Server::start()
 void Server::incomingConnection(qintptr handle)
 {
 
+
+    mutex->lock();
     if((clientes_conectados<clientes_esperados)){
         clientes_conectados++;
+         qDebug() <<"clientes conectados: " << clientes_conectados << " clientes esperados: "<< clientes_esperados;
+
         qDebug() << "incomingConnection = " << handle;
-        SocketThread *thread = new SocketThread(&directorio,handle,&CLIENTES,&Datos_Cliente);
+        SocketThread *thread = new SocketThread(&directorio,handle,&CLIENTES,&Datos_Cliente,cliente_conectado);
 
         connect(thread,SIGNAL(datos(QString,int)),this,SIGNAL(datos(QString,int)));
         connect(thread,SIGNAL(rango(int)),this,SIGNAL(rango(int)));
         connect(thread,SIGNAL(incremento(int)),this,SIGNAL(incremento(int)));
         connect(thread, SIGNAL(disconect(int)),this, SLOT(desconect(int)));
-       // connect(thread, SIGNAL(read(int)),this, SIGNAL(lectura(int)));
-       // connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
         connect(thread, SIGNAL(lectura(int,int,QTcpSocket *)), this, SLOT(lectura_cliente(int,int,QTcpSocket *)));
-        connect(this, SIGNAL(todos(QTcpSocket *)), thread, SLOT(todos(QTcpSocket *)));
+        connect(thread, SIGNAL(todos()), this, SLOT(todos()));
         connect(this, SIGNAL(conected(int)), thread, SLOT(conected(int))); //cliente oriigen que se conecta
-       // connect(thread, SIGNAL(fin_transmision()), this, SLOT(adios()));
+       connect(thread, SIGNAL(desc_ccdos()), this, SLOT(adios()));
         thread->start();
 
     }
     else{
-            QTcpSocket* m_socket = new QTcpSocket;
-            m_socket = new QTcpSocket;
-            m_socket->setSocketDescriptor(handle);
-            m_socket->write("ocupado\n");
-            emit datos("->>>>Se intentan conectar mas clientes de los esperados para envio \n Se les ha comunicado que el servidor está ocupado..",1);
-            m_socket->close();
-    }
-    if (clientes_conectados>=clientes_esperados){
-        Cliente->write("aceptada\n");
+                QTcpSocket* m_socket = new QTcpSocket;
+                m_socket = new QTcpSocket;
+                m_socket->setSocketDescriptor(handle);
+                m_socket->write("ocupado\n");
+                emit datos("->>>>Se intentan conectar mas clientes de los esperados para envio \n Se les ha comunicado que el servidor está ocupado..",1);
+                m_socket->close();
+        }
 
-    }
+    mutex->unlock();
 
 }
 
 void Server::adios(){
-    cliente_conectado=0;    //el cliente que enviaba datos, ha terminado
-    clientes_esperados=50;
+     mutex->lock();
+    clientes_conectados--;
+    mutex->unlock();
+}
+void Server::todos(){
+    if (clientes_conectados>=clientes_esperados){
+            Cliente->write("aceptada\n");
+
+    }
 }
 
-
-
  void Server::lectura_cliente(int k, int cc, QTcpSocket * origen){
+     mutex->lock();
      if (k==1){
          cliente_conectado=1;
          emit conected(1);
@@ -145,6 +153,7 @@ void Server::adios(){
          qDebug() << "cliente que quiere enviar paquetes" << cc << clientes_conectados;
          Cliente=NULL;
      }
+     mutex->unlock();
  }
 Server::~Server(){}
 //__________________________________________________________________________________________________________
@@ -153,17 +162,17 @@ Server::~Server(){}
 //se tiene una lista con los destinatarios y es el que se conecta con origen
 //quien reenvia sus datos a estos.
 
-SocketThread::SocketThread(QDir* directorio,qintptr descriptor, QQueue<QPair<qintptr,QTcpSocket*>>* lista , QQueue<QPair<QByteArray, QString> > *Datos_Cliente, QObject *parent)
+SocketThread::SocketThread(QDir* directorio,qintptr descriptor, QQueue<QPair<qintptr,QTcpSocket*>>* lista , QQueue<QPair<QByteArray, QString> > *Datos_Cliente,int pp, QObject *parent)
     : QThread(parent),
       m_socketDescriptor(descriptor),
       m_blockSize(0)
 {
-
-    socketDescriptor_2= -3;
+    socketDescriptor_1= -1;
+    socketDescriptor_2= -1;
     t=0;
     AC=Datos_Cliente;
     Lista=lista;
-    cliente_conectado=0;
+    cliente_conectado=pp;
     directorio_1=directorio;
     m_socket = new QTcpSocket;
     m_socket->setSocketDescriptor(m_socketDescriptor);
@@ -200,7 +209,7 @@ void SocketThread::run()
 
 void SocketThread::todos(QTcpSocket * a){
 
-       // send("","aceptada\n",a);
+
 }
 
 
@@ -232,15 +241,15 @@ void SocketThread::send(QByteArray q, QString filename, QTcpSocket* a){
     }
     else{
         if(b==0){
-            //el cliente origen espera a que haya mas clientes destino conectados
-            QString g="CONEXION: Ha llegado una solicitud para transmitir datos \n       ->se ha aceptado, cliente: ";
-            QHostAddress h=m_socket->peerAddress();
+//            //el cliente origen espera a que haya mas clientes destino conectados
+//            QString g="CONEXION: Ha llegado una solicitud para transmitir datos \n       ->se ha aceptado, cliente: ";
+//            QHostAddress h=m_socket->peerAddress();
 
-            g+= h.toString();
-            g+= " Puerto: " ;
-            g+= QString::number(m_socket->peerPort());
-            socketDescriptor_2=m_socket->peerPort();
-            emit datos(g,0);
+//            g+= h.toString();
+//            g+= " Puerto: " ;
+//            g+= QString::number(m_socket->peerPort());
+//            socketDescriptor_2=m_socket->peerPort();
+//            emit datos(g,0);
             emit datos("A la espera de que se conecten los clientes solicitados por Origen de datos.",2);
             m_socket->write("wait\n");
         }
@@ -388,7 +397,7 @@ void SocketThread::onReadyRead()
         QString c; QString x;
         if(m_socket->canReadLine()) //Leo la primera linea que se ma transferido
           if(size==0){
-                socketDescriptor_1=m_socket->peerPort();
+                //socketDescriptor_1=m_socket->peerPort();
                 linea=m_socket->readLine();
                 c.append(linea);
                 x=c.split(" ").takeFirst();
@@ -398,8 +407,10 @@ void SocketThread::onReadyRead()
             if(x=="s"){
                 emit datos("-----------------------------------------------------",0);
                     //comprobar si no hay usuarios origen conectados ya
-                if(cliente_conectado==0){
-                    //size=0;
+                 qDebug() <<"CLiente_conectado= "<< cliente_conectado;
+                if(cliente_conectado==0){  //si algun cliente origen se ha conectado
+
+
                     Cliente_o=m_socket;
 
                     int cc=c.split("\n").takeFirst().split(" ").at(1).toInt();
@@ -407,22 +418,35 @@ void SocketThread::onReadyRead()
                     cliente_conectado=1;
                     Lista->pop_back();
 
+                    if(cc!=Lista->size()){
+                        //si no estan todos los clientes le decimos que espere
+                        QString g="CONEXION: Ha llegado una solicitud para transmitir datos \n       ->se ha aceptado, cliente: ";
+                        QHostAddress h=m_socket->peerAddress();
 
-                    if(cc==Lista->size()){
-                        //t=1;
+                        g+= h.toString();
+                        g+= " Puerto: " ;
+                        g+= QString::number(m_socket->peerPort());
+                        socketDescriptor_2=m_socket->peerPort(); //cliente que va a ser el origen
+                        qDebug() <<"Puerto del cliente origen: " << socketDescriptor_2;
+                        emit datos(g,0);
+                        send("","wait\n",NULL);
+                        qDebug() <<"Clientes que se esperan: "<< cc;
+                        emit datos("    -Clientes que se esperan: "+ QString::number(cc),2);
+                    }
+                    else  {
                         QString name=directorio_1->absolutePath() + "/" + QString::number(m_socket->peerPort());
                         filename_1=name;
                        qDebug() <<"Me ha lleagdo una solicitud y ha sido aceptada...";
                        send("","aceptada\n",NULL);
+
                     }
-                    else    //si no estan todos los clientes le decimos que espere
-                        send("","wait\n",NULL);
-                    qDebug() <<"Clientes que se esperan: "<< cc;
-                    emit datos("    -Clientes que se esperan: "+ QString::number(cc),2);
+
                 }
                 else{
                       send("","ocupado\n",NULL);
+                      emit desc_ccdos();//decrementamos los clientes conectados, oponente a la señal lectura
                 }
+                emit todos(); //comprobar si estan todos los clientes conectados
 
             }
             else{
@@ -455,26 +479,20 @@ void SocketThread::onReadyRead()
                     else{
                         if(x=="c"){
                              qDebug() <<"desconexion: " <<socketDescriptor_1 << " " <<socketDescriptor_2;
-                             if(socketDescriptor_1==socketDescriptor_2){ //m_socket==Cliente_o
+                             if(socketDescriptor_1==socketDescriptor_2){
 
-                               /*  qDebug() <<"cliente Origen que se desconecta................."*/;
-
-                                 AC->clear();
-                                 Lista->clear();
-                                 //onDisconnected();
-                                 qDebug() << "borrando datos----";
-//                                 emit datos("Cliente Origen se desconecta......",0);
-//                                 emit lectura(0,0,NULL);
-                                 //cliente_conectado=0;
+                                 qDebug() <<"cliente que se desconecta.................";
+                                  emit datos("cliente destino que se desconecta...",1);
 
                              }
                              else{
-                                    qDebug() <<"cliente que se desconecta.................";
-                                     emit datos("cliente destino que se desconecta...",1);
-
-                                    //onDisconnected();
-
-                                   // Limpieza();
+                                      AC->clear();
+                                      Lista->clear();
+                                      //onDisconnected();
+                                      qDebug() << "borrando datos----";
+     //                                 emit datos("Cliente Origen se desconecta......",0);
+     //                                 emit lectura(0,0,NULL);
+                                      //cliente_conectado=0;
                              }
                              //m_socket->close();
                         }
@@ -485,7 +503,8 @@ void SocketThread::onReadyRead()
                                 emit rango(archivos_actuales);
                             }
                             else{
-                                if(x=="a"){
+                                if(x=="d"){ //cliente destino
+                                    emit todos(); //comprobar si estan todos los clientes conectados
 
                                 }
                                 else{
@@ -557,20 +576,21 @@ void SocketThread::onReadyRead()
                 onReadyRead();
             }
 }
+
 void  SocketThread::conected(int x){
-    cliente_conectado=x;
+    cliente_conectado=1;
 }
 
 void SocketThread::onDisconnected()
 {
 
     if(socketDescriptor_1==socketDescriptor_2){
-        emit disconect(1);
+        emit disconect(0);
         socketDescriptor_2=-3;
 
     }
     else{
-        emit disconect(0);
+        emit disconect(1);
         socketDescriptor_1=-1;
     }
 

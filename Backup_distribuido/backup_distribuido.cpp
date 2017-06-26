@@ -104,7 +104,7 @@ void Backup_distribuido::on_tabWidget_tabBarClicked(int index)
                        connect(cliente,SIGNAL(rango(int)),this,SLOT(Barra_ranfo(int )));
                        connect(cliente,SIGNAL(incremento(int)),this,SLOT(Barra_de_progreso(int)));
                        connect(cliente,SIGNAL(datos(QString,int)),this,SLOT(Datos(QString,int)));
-                       connect(cliente,SIGNAL(b_3()),this,SLOT(close_()));
+                       connect(cliente,SIGNAL(b_3()),this,SLOT(on_pushButton_3_clicked()));
                        cliente->Test();
                    }
                 }
