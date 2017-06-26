@@ -21,6 +21,7 @@ signals:
     void incremento(int);
     void datos(QString,int);
     void b_3();
+    void inicio_cliente();
 public slots:
     void Test();
     void connected();

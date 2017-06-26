@@ -207,13 +207,15 @@ void SocketThread::run()
     exec();
 }
 
+
+//vacio, borrar
 void SocketThread::todos(QTcpSocket * a){
 
 
 }
 
 
-
+//vacio, borrar
 void SocketThread::leer(void){
 
 
@@ -241,15 +243,6 @@ void SocketThread::send(QByteArray q, QString filename, QTcpSocket* a){
     }
     else{
         if(b==0){
-//            //el cliente origen espera a que haya mas clientes destino conectados
-//            QString g="CONEXION: Ha llegado una solicitud para transmitir datos \n       ->se ha aceptado, cliente: ";
-//            QHostAddress h=m_socket->peerAddress();
-
-//            g+= h.toString();
-//            g+= " Puerto: " ;
-//            g+= QString::number(m_socket->peerPort());
-//            socketDescriptor_2=m_socket->peerPort();
-//            emit datos(g,0);
             emit datos("A la espera de que se conecten los clientes solicitados por Origen de datos.",2);
             m_socket->write("wait\n");
         }
@@ -470,7 +463,6 @@ void SocketThread::onReadyRead()
                 }
                 else{
                     if(x=="f"){
-                        //size=0;
                            emit datos("------Ha finalizado el envio del cliente orige, comienza el reenvio hacia lientes, destino..",2);
                           //vamos a reenviar a los clientes
                           envio();
@@ -488,13 +480,10 @@ void SocketThread::onReadyRead()
                              else{
                                       AC->clear();
                                       Lista->clear();
-                                      //onDisconnected();
                                       qDebug() << "borrando datos----";
-     //                                 emit datos("Cliente Origen se desconecta......",0);
-     //                                 emit lectura(0,0,NULL);
-                                      //cliente_conectado=0;
                              }
-                             //m_socket->close();
+                             m_socket->close(); //nos desconectamos del cliente
+
                         }
                         else{
                             if(x=="e"){

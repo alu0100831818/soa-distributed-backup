@@ -348,12 +348,14 @@ void SocketTest::readyRead()
      }
      else{
              if(s==0){
+                 emit inicio_cliente();
                  QMessageBox msgBox;
                  msgBox.setText("El servidor tiene su cupo de clientes saturado, intentelo mas tarde..");
                  msgBox.exec();
+
                  emit disconnected();
                  emit datos("Conexion imposible, el servidor está ocupado atendiendo a otro cliente...",0);
-                 //emit b_3();
+
              }
              else{
                  if(w==0){
@@ -404,6 +406,7 @@ void SocketTest::readyRead()
 
                                  //esta ruta es valida para linux, no es una solucion buena para otros sistemas...
                                  //deberia vernir asi: /home/...  (actual.second)
+                                 qDebug() <<"por aqui 1, error cliente destino, demas ignorar!!" ;
                                 QString name=directorio_destino->absolutePath() + "/" + QString::number(socket->peerPort());
 
                                 name.append(actual.second);

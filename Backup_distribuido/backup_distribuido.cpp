@@ -89,6 +89,8 @@ void Backup_distribuido::on_tabWidget_tabBarClicked(int index)
                       connect(cliente,SIGNAL(rango(int)),this,SLOT(Barra_ranfo(int )));
                       connect(cliente,SIGNAL(incremento(int)),this,SLOT(Barra_de_progreso(int)));
                       connect(cliente,SIGNAL(datos(QString,int)),this,SLOT(Datos(QString,int)));
+
+                      connect(cliente,SIGNAL(inicio_cliente()),this,SLOT(activa_inicio()));
                       cliente->Test();
 
 
@@ -104,7 +106,7 @@ void Backup_distribuido::on_tabWidget_tabBarClicked(int index)
                        connect(cliente,SIGNAL(rango(int)),this,SLOT(Barra_ranfo(int )));
                        connect(cliente,SIGNAL(incremento(int)),this,SLOT(Barra_de_progreso(int)));
                        connect(cliente,SIGNAL(datos(QString,int)),this,SLOT(Datos(QString,int)));
-                       connect(cliente,SIGNAL(b_3()),this,SLOT(on_pushButton_3_clicked()));
+                       //connect(cliente,SIGNAL(b_3()),this,SLOT(on_pushButton_3_clicked()));
                        cliente->Test();
                    }
                 }
@@ -235,4 +237,27 @@ void Backup_distribuido ::Datos(QString a, int b){
     }
     ui->textEdit->append(a);
 
+}
+
+void Backup_distribuido ::activa_inicio(){ //solo un cliente que es origen o que queria serlo puede hacer esto
+    qDebug() <<"Activo ventana..";
+    //on_pushButton_3_clicked();
+    ui->Inicio->setEnabled(true);
+    ui->Inicio->setVisible(true);
+    ui->lineEdit->clear();
+    ui->lineEdit_2->clear();
+    ui->lineEdit_3->clear();
+
+    ui->radioButton->setDisabled(false);
+    ui->radioButton_2->setDisabled(false);
+    ui->checkBox->setDisabled(true);
+
+    Servidor=200;
+    Cliente_origen=200;
+    Cliente_destino=200;
+
+    directorio=0;
+    clientes_enviar=0;
+    ui->progressBar->setOrientation(Qt::Horizontal);
+    //Barra_de_progreso(0);
 }

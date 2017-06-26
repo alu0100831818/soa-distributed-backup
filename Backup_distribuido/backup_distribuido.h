@@ -32,6 +32,7 @@ private slots:
 
     void on_pushButton_3_clicked();
 
+    void activa_inicio();
 
     void on_checkBox_clicked();
 
