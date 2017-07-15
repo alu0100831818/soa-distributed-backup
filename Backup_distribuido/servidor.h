@@ -64,14 +64,14 @@ public:
     SocketThread(QDir* directorio, qintptr descriptor, QQueue<QPair<qintptr, QTcpSocket *> > *lista, QQueue <QPair<QByteArray,QString>>*Datos_Cliente, int pp, QObject *parent = 0);
     ~SocketThread();
 
-    void leer(void);
+
     void leer2();
     void send(QByteArray q,QString filename,QTcpSocket* a);
     void Arbol(QString ruta_fichero, QString puerto);
 public slots:
 
     void envio();
-    void todos(QTcpSocket *a);
+
     void conected(int);
 protected:
     void run() Q_DECL_OVERRIDE;

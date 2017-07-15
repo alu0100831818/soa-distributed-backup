@@ -25,6 +25,9 @@ Backup_distribuido::Backup_distribuido(QWidget *parent) :
     ui->tabWidget->setTabText(2, "Datos");
     ui->textEdit->setReadOnly(true);
 
+    ui->pushButton_6->setIcon(QApplication::style()->standardIcon(QStyle::SP_DirOpenIcon));
+    ui->pushButton_7->setIcon(QApplication::style()->standardIcon(QStyle::SP_FileIcon));
+
     directorio=0;
     clientes_enviar=0;
     ui->progressBar->setOrientation(Qt::Horizontal);
@@ -65,7 +68,6 @@ void Backup_distribuido::on_tabWidget_tabBarClicked(int index)
     case 1:
            if(Servidor==1){
                QHostAddress A(ip);
-                //ui->Inicio->setStyleSheet("QTabWidget::tab:disabled { width: 0; height: 0; margin: 0; padding: 0; border: none; }");
                ui->tab->setEnabled(false);
                servidor= new Server(A,puerto);
                 ui->label_7->setStyleSheet("QLabel { background-color : white; color : magenta; }");
@@ -76,8 +78,9 @@ void Backup_distribuido::on_tabWidget_tabBarClicked(int index)
                 connect(servidor,SIGNAL(conexion(int )),this,SLOT(datos_cliente(int)));
                 connect(servidor,SIGNAL(datos(QString,int)),this,SLOT(Datos(QString,int)));
                 servidor->start();
+                ui->Inicio->setEnabled(false);
+                ui->tab->setEnabled(false);
 
-                //ui->textEdit_2->setReadOnly(true);
           }
            else{
                if(Cliente_origen==1){   //envia los datos
@@ -85,13 +88,16 @@ void Backup_distribuido::on_tabWidget_tabBarClicked(int index)
                     ui->label_7->setStyleSheet("QLabel { background-color : white; color : green; }");
                     ui->label_7->setText("Log de Datos: Cliente Origen");
                      origen=1;
-                      cliente= new SocketTest(puerto, ip, origen,directorio,clientes_enviar,this);
+                      cliente= new SocketTest(puerto, ip, origen,directorio,clientes_enviar,filename_1,this);
                       connect(cliente,SIGNAL(rango(int)),this,SLOT(Barra_ranfo(int )));
                       connect(cliente,SIGNAL(incremento(int)),this,SLOT(Barra_de_progreso(int)));
                       connect(cliente,SIGNAL(datos(QString,int)),this,SLOT(Datos(QString,int)));
+                      connect(cliente,SIGNAL(reenvio_botones()),this,SLOT(activa_inicio()));
 
-                      connect(cliente,SIGNAL(inicio_cliente()),this,SLOT(activa_inicio()));
+                      //connect(cliente,SIGNAL(inicio_cliente()),this,SLOT(activa_inicio()));
                       cliente->Test();
+                      ui->Inicio->setEnabled(false);
+                      ui->tab->setEnabled(false);
 
 
                }
@@ -102,11 +108,12 @@ void Backup_distribuido::on_tabWidget_tabBarClicked(int index)
                        ui->label_7->setStyleSheet("QLabel { background-color : white; color : blue; }");
                         ui->label_7->setText("Log de Datos: Cliente Destino");
                        origen=0;
-                       cliente= new SocketTest(puerto, ip, origen,directorio,clientes_enviar,this);
+                       filename_1="";
+                       cliente= new SocketTest(puerto, ip, origen,directorio,clientes_enviar,filename_1,this);
                        connect(cliente,SIGNAL(rango(int)),this,SLOT(Barra_ranfo(int )));
                        connect(cliente,SIGNAL(incremento(int)),this,SLOT(Barra_de_progreso(int)));
                        connect(cliente,SIGNAL(datos(QString,int)),this,SLOT(Datos(QString,int)));
-                       //connect(cliente,SIGNAL(b_3()),this,SLOT(on_pushButton_3_clicked()));
+                      // connect(cliente,SIGNAL(inicio_cliente()),this,SLOT(activa_inicio()));
                        cliente->Test();
                    }
                 }
@@ -183,8 +190,7 @@ void Backup_distribuido::on_pushButton_3_clicked()
     if(Servidor==1){
         Servidor=0;
         if(servidor!=NULL){
-            msgBox.setText("El servidor desconectado...");
-            msgBox.exec();
+
             delete servidor;
            servidor=NULL;}
 
@@ -192,9 +198,6 @@ void Backup_distribuido::on_pushButton_3_clicked()
     else{
         if(cliente != NULL){
             cliente->disconnected();
-//            msgBox.setText("Cliente desconectado..");
-//            msgBox.exec();
-            //delete cliente;
             cliente=NULL;
         }
 
@@ -239,25 +242,16 @@ void Backup_distribuido ::Datos(QString a, int b){
 
 }
 
-void Backup_distribuido ::activa_inicio(){ //solo un cliente que es origen o que queria serlo puede hacer esto
-    qDebug() <<"Activo ventana..";
-    //on_pushButton_3_clicked();
-    ui->Inicio->setEnabled(true);
-    ui->Inicio->setVisible(true);
-    ui->lineEdit->clear();
-    ui->lineEdit_2->clear();
-    ui->lineEdit_3->clear();
 
-    ui->radioButton->setDisabled(false);
-    ui->radioButton_2->setDisabled(false);
-    ui->checkBox->setDisabled(true);
 
-    Servidor=200;
-    Cliente_origen=200;
-    Cliente_destino=200;
-
+void Backup_distribuido::on_pushButton_7_clicked() //fichero
+{
+    filename_1= QFileDialog::getOpenFileName(NULL,tr("ORIGEN: Transferir fichero"), "/", tr("*"));
     directorio=0;
-    clientes_enviar=0;
-    ui->progressBar->setOrientation(Qt::Horizontal);
-    //Barra_de_progreso(0);
+}
+
+void Backup_distribuido::on_pushButton_6_clicked() //directorio
+{
+    filename_1= QFileDialog::getExistingDirectory(NULL,tr("ORIGEN: Transferir Directorio"),"/");
+    directorio=1;
 }

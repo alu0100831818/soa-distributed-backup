@@ -208,21 +208,6 @@ void SocketThread::run()
 }
 
 
-//vacio, borrar
-void SocketThread::todos(QTcpSocket * a){
-
-
-}
-
-
-//vacio, borrar
-void SocketThread::leer(void){
-
-
-}
-
-
-
 void SocketThread::send(QByteArray q, QString filename, QTcpSocket* a){
 
     if(a!=NULL){
@@ -388,7 +373,7 @@ void SocketThread::onReadyRead()
 {
         QByteArray linea;
         QString c; QString x;
-        if(m_socket->canReadLine()) //Leo la primera linea que se ma transferido
+        if(m_socket->canReadLine()){ //Leo la primera linea que se ma transferido
           if(size==0){
                 //socketDescriptor_1=m_socket->peerPort();
                 linea=m_socket->readLine();
@@ -397,7 +382,10 @@ void SocketThread::onReadyRead()
                 qDebug() <<"Lo que ha llegado"<< c;
           }
 
+        }
+
             if(x=="s"){
+                qDebug() <<"llega solicitud..";
                 emit datos("-----------------------------------------------------",0);
                     //comprobar si no hay usuarios origen conectados ya
                  qDebug() <<"CLiente_conectado= "<< cliente_conectado;
@@ -436,8 +424,16 @@ void SocketThread::onReadyRead()
 
                 }
                 else{
+                    if(Cliente_o==m_socket){
+                       directorio_1->cd(QDir::homePath());
+                       directorio_1->cd("Servidor_BackUpD");
+                       directorio_1->cd(QString::number(m_socket->peerPort()));
+                        send("","aceptada\n",NULL);
+                    }
+                    else{
                       send("","ocupado\n",NULL);
                       emit desc_ccdos();//decrementamos los clientes conectados, oponente a la señal lectura
+                    }
                 }
                 emit todos(); //comprobar si estan todos los clientes conectados
 
@@ -470,19 +466,27 @@ void SocketThread::onReadyRead()
                     }
                     else{
                         if(x=="c"){
+
+                            m_socket->close(); //nos desconectamos del cliente
+
+
                              qDebug() <<"desconexion: " <<socketDescriptor_1 << " " <<socketDescriptor_2;
                              if(socketDescriptor_1==socketDescriptor_2){
 
                                  qDebug() <<"cliente que se desconecta.................";
                                   emit datos("cliente destino que se desconecta...",1);
 
+                                 delete m_socket;
+                                 m_socket= NULL;
+
                              }
                              else{
+                                   // Cliente_o= NULL;
+                                      cliente_conectado=0;
                                       AC->clear();
-                                      Lista->clear();
+                                     // Lista->clear();
                                       qDebug() << "borrando datos----";
                              }
-                             m_socket->close(); //nos desconectamos del cliente
 
                         }
                         else{
@@ -496,64 +500,64 @@ void SocketThread::onReadyRead()
                                     emit todos(); //comprobar si estan todos los clientes conectados
 
                                 }
-                                else{
-                                     //esta ruta es valida para linux, no es una solucion buena para otros sistemas...
-                                     //deberia vernir asi: /home/...  (actual.second)
-                                    QString name=directorio_1->absolutePath() + "/" + QString::number(m_socket->peerPort());
-
-                                    name.append(actual.second);
-                                    QFile file(name);
-                                    if (!file.open(QIODevice::WriteOnly | QIODevice::ReadWrite)){
-                                         qDebug() << "No se abre el fichero...";
-                                          qDebug() <<m_socket->read(30);
-                                    }
                                     else{
-                                        int ssize=0;
-                                        int o=size;
-                                        qint64 es=50000;
-                                        if(size>=1000000)
-                                            es=1000000;
-                                         while(ssize < size){
-                                             if(size>es){
-                                                m_socket->waitForReadyRead();
-                                             }
-                                             if(m_socket->bytesAvailable()>0){
+                                         //esta ruta es valida para linux, no es una solucion buena para otros sistemas...
+                                         //deberia vernir asi: /home/...  (actual.second)
+                                        QString name=directorio_1->absolutePath() + "/" + QString::number(m_socket->peerPort());
 
-                                                 QByteArray c;
-                                                 int k=m_socket->bytesAvailable();
-                                                 if(k<o){
-                                                     c=m_socket->read(k);
-                                                     file.write(c);
-                                                     ssize+=c.size();
-                                                     o-=c.size();
-                                                     qDebug() <<"o: "<< o << " ssize: " << ssize;
+                                        name.append(actual.second);
+                                        QFile file(name);
+                                        if (!file.open(QIODevice::WriteOnly | QIODevice::ReadWrite)){
+                                             qDebug() << "No se abre el fichero..."<< name;
+                                              qDebug() <<m_socket->read(30);
+                                        }
+                                        else{
+                                            int ssize=0;
+                                            int o=size;
+                                            qint64 es=50000;
+                                            if(size>=1000000)
+                                                es=1000000;
+                                             while(ssize < size){
+                                                 if(size>es){
+                                                    m_socket->waitForReadyRead();
                                                  }
-                                                 else{
-                                                     c=m_socket->read(o);
-                                                     file.write(c);
-                                                     ssize+=c.size();
-                                                     o-=c.size();
-                                                     qDebug() <<"o: "<< o << " ssize: " << ssize;
-                                                     break;
+                                                 if(m_socket->bytesAvailable()>0){
+
+                                                     QByteArray c;
+                                                     int k=m_socket->bytesAvailable();
+                                                     if(k<o){
+                                                         c=m_socket->read(k);
+                                                         file.write(c);
+                                                         ssize+=c.size();
+                                                         o-=c.size();
+                                                         qDebug() <<"o: "<< o << " ssize: " << ssize;
+                                                     }
+                                                     else{
+                                                         c=m_socket->read(o);
+                                                         file.write(c);
+                                                         ssize+=c.size();
+                                                         o-=c.size();
+                                                         qDebug() <<"o: "<< o << " ssize: " << ssize;
+                                                         break;
+                                                     }
+
                                                  }
+
 
                                              }
 
 
-                                         }
+                                            size=0;
 
 
-                                        size=0;
+                                            file.close();
+                                             emit datos("*Archivo que se ha recibido: "+ actual.second+" "+ QString::number(file.size()),2);
+                                            actual.second=name; //ruta absoluta en el servidor
+                                            AC->append(actual);
 
-
-                                        file.close();
-                                         emit datos("*Archivo que se ha enviado: "+ actual.second+" "+ QString::number(file.size()),2);
-                                        actual.second=name; //ruta absoluta en el servidor
-                                        AC->append(actual);
-
-                                        emit incremento(1);
+                                            emit incremento(1);
+                                        }
                                     }
-                                }
 
 
                             }
@@ -567,7 +571,7 @@ void SocketThread::onReadyRead()
 }
 
 void  SocketThread::conected(int x){
-    cliente_conectado=1;
+    cliente_conectado=x;
 }
 
 void SocketThread::onDisconnected()
@@ -604,4 +608,5 @@ void SocketThread::onDisconnected()
     for(int j=0;j<Lista->size();j++){
         send("","fin\n",Lista->operator [](j).second);
     }
+    size=0;
  }

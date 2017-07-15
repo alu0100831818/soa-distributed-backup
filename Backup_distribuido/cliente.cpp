@@ -23,11 +23,18 @@ void delay(int k)
         QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
 }
 
-SocketTest::SocketTest(int port, QString ipp, int Origen, int dir, int clientes,QObject *parent) :
+
+void SocketTest::setfilename(int  filename){
+    directorio=filename;
+
+}
+
+SocketTest::SocketTest(int port, QString ipp, int Origen, int dir, int clientes, QString f,QObject *parent) :
     QObject(parent)
 {
 
     //directorio=0;
+    filename_1=f;
     clientes_enviar=clientes;
     directorio=dir;
     origen = Origen;
@@ -38,8 +45,9 @@ SocketTest::SocketTest(int port, QString ipp, int Origen, int dir, int clientes,
 
 
 SocketTest::~SocketTest(){
-
-
+//vaciar variables..
+    if(socket!= NULL)
+        delete socket;
 }
 
 void SocketTest::Test()
@@ -47,7 +55,7 @@ void SocketTest::Test()
     size=0;
     socket = new QTcpSocket(this);
     connect(socket, SIGNAL(connected()), this, SLOT(connected()));
-    connect(socket, SIGNAL(disconnected()), this, SLOT(disconnected()));
+    //connect(socket, SIGNAL(disconnected()), this, SLOT(disconnected()));
     connect(socket, SIGNAL(readyRead()), this, SLOT(readyRead()));
     connect(socket, SIGNAL(bytesWritten(qint64)), this, SLOT(bytesWritten(qint64)));
 
@@ -146,7 +154,7 @@ void SocketTest::send(QByteArray q,QString filename){
             QByteArray a="s"; a.append(" ");
             a.append(QByteArray::number(clientes_enviar)); // s numero_cc\n
             a.append("\n");
-
+            qDebug() <<"se envia solicitud.. "<<a;
             socket->write(a); //solicitud, usuarios, archivos
         }
         else{
@@ -159,6 +167,8 @@ void SocketTest::send(QByteArray q,QString filename){
                     socket->write(QByteArray("f \n"));
                     emit datos("->Se ha finalizado la transmision de datos hacia el servidor..",1);
                     qDebug() << "envio fin";
+                    //emitimos selñal para poder reenviar datos al servidor
+
                }
                else{
                    if(v==0){
@@ -194,63 +204,64 @@ void SocketTest::send(QByteArray q,QString filename){
                                //cliente destino envia mensaje:
                                     socket->write("d \n");
                            }
-                           else{
-                                  QFile* m_file= new QFile(filename);
-                                   if ((!m_file->open(QIODevice::ReadOnly)) ) {
-                                       qDebug() << "No puedo abrir el fichero";
-                                       return;
-                                   }
-                                   int ss=m_file->size();
-                                   if(ss>1000)
-                                        delay(1);
-                                    QString filee="bytes ";
-                                    filee.append(filename);
-                                    send(QByteArray::number(ss),filee);
-                                 qint64 sise=m_file->size(); qint64 tr=sise;
-                                    int x=0;
-                                QByteArray read;
-                                qint64 es=50000;
-                                if(ss>=10000000)
-                                    es=10000000;
-                                qDebug() << "tamaño del socket: " << socket->size();
-                                 while(socket->isWritable())
-                                          {
-
-                                             read.clear();
-                                             sise=sise-10000;
-                                             x=10000+sise;
-                                              if(sise>0)
+                               else{
+                                      QFile* m_file= new QFile(filename);
+                                       if ((!m_file->open(QIODevice::ReadOnly)) ) {
+                                           qDebug() << "No puedo abrir el fichero";
+                                           return;
+                                       }
+                                       int ss=m_file->size();
+                                       if(ss>1000)
+                                            delay(1);
+                                        QString filee="bytes ";
+                                        filee.append(filename);
+                                        send(QByteArray::number(ss),filee);
+                                     qint64 sise=m_file->size(); qint64 tr=sise;
+                                        int x=0;
+                                    QByteArray read;
+                                    qint64 es=50000;
+                                    if(ss>=10000000)
+                                        es=10000000;
+                                    qDebug() << "tamaño del socket: " << socket->size();
+                                     while(socket->isWritable())
                                               {
-                                                  if(sise<1000)
-                                                       read = m_file->read(tr);
-                                                    else{
-                                                      if(sise>100000)
-                                                        read = m_file->read(100000);
-                                                      else
-                                                         read = m_file->read(10000);
+
+                                                 read.clear();
+                                                 sise=sise-10000;
+                                                 x=10000+sise;
+                                                  if(sise>0)
+                                                  {
+                                                      if(sise<1000)
+                                                           read = m_file->read(tr);
+                                                        else{
+                                                          if(sise>100000)
+                                                            read = m_file->read(100000);
+                                                          else
+                                                             read = m_file->read(10000);
+                                                      }
                                                   }
-                                              }
-                                              else{
-                                                  if(x>0)
-                                                    read = m_file->read(x);
-                                              }
+                                                  else{
+                                                      if(x>0)
+                                                        read = m_file->read(x);
+                                                  }
 
-                                              qDebug() << "Read : " << read.size();
-                                              if(read.size()<=0){
-                                                break;
-                                              }
-                                              es+=socket->write(read);
-                                              qDebug() << "Written : " << read.size();
+                                                  qDebug() << "Read : " << read.size();
+                                                  if(read.size()<=0){
+                                                    break;
+                                                  }
+                                                  es+=socket->write(read);
+                                                  qDebug() << "Written : " << read.size();
 
-                                              if(read.size()>es){
-                                                  socket->waitForBytesWritten();
+                                                  if(read.size()>es){
+                                                      socket->waitForBytesWritten();
 
-                                              }
+                                                  }
 
 
-                                    }
-                                   m_file->close();
-                           }
+                                        }
+                                       m_file->close();
+                               }
+
 
                        }
                    }
@@ -299,19 +310,14 @@ void SocketTest::disconnected()
     QMessageBox msgBox;
     msgBox.setText("Se ha desconectado del servidor!!");
     msgBox.exec();
-    socket->write(QByteArray("c \n"));
-    //qDebug() << "Disconnected!";
 }
 
 void SocketTest::bytesWritten(qint64 bytes)
 {
-    //qDebug() << "We wrote: " << bytes;
+    qDebug() << "We wrote: " << bytes;
 }
 
-void SocketTest::leer()
-{
 
-}
 
 void SocketTest::readyRead()
 {
@@ -333,29 +339,22 @@ void SocketTest::readyRead()
         int b=QString::compare(fil,"b", Qt::CaseInsensitive);
         int x=QString::compare(fil,"e", Qt::CaseInsensitive);
      if(k==0){
-         if(directorio==1){
-               filename_1= QFileDialog::getExistingDirectory(NULL,tr("ORIGEN: Transferir Directorio"),"/");
-
-
+         if(directorio==0){
+             send(QByteArray::number(1),"envio ");
          }
-         else{
-               filename_1= QFileDialog::getOpenFileName(NULL,tr("ORIGEN: Transferir fichero"), "/", tr("*"));
-               send(QByteArray::number(1),"envio ");
 
-        }
         qDebug() << "Reading..."<<fileName ;
         write(filename_1);
      }
      else{
              if(s==0){
-                 emit inicio_cliente();
+
                  QMessageBox msgBox;
                  msgBox.setText("El servidor tiene su cupo de clientes saturado, intentelo mas tarde..");
                  msgBox.exec();
 
-                 emit disconnected();
                  emit datos("Conexion imposible, el servidor está ocupado atendiendo a otro cliente...",0);
-
+                 emit inicio_cliente();
              }
              else{
                  if(w==0){
@@ -371,9 +370,7 @@ void SocketTest::readyRead()
                          msgBox.setText("El servidor ha terminado de realizar el envio..");
                          msgBox.exec();
                         emit datos("El servidor ha terminado de realizar el envio..",2);
-                         //emit disconnected();
-                         emit b_3();
-                         //emit disconnected();
+                        emit inicio_cliente(); //se le permite al cliente cambiar su role al cliente destino
                      }
                      else{
                          if(x==0){
@@ -421,8 +418,8 @@ void SocketTest::readyRead()
                                     int ssize=0;
                                     int o=size;
                                     qint64 es=50000;
-                                    if(size>=1000000)
-                                        es=1000000;
+                                    if(size>=100000)
+                                        es=10000;
                                      while(ssize < size){
                                          if(size>es){
                                             socket->waitForReadyRead();

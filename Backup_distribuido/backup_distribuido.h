@@ -32,8 +32,6 @@ private slots:
 
     void on_pushButton_3_clicked();
 
-    void activa_inicio();
-
     void on_checkBox_clicked();
 
     void on_radioButton_2_clicked();
@@ -42,6 +40,10 @@ private slots:
 
     void Barra_de_progreso(int p);
 
+
+    void on_pushButton_7_clicked();
+
+    void on_pushButton_6_clicked();
 
 private:
     Ui::Backup_distribuido *ui;
@@ -54,6 +56,7 @@ private:
     SocketTest* cliente;
     int directorio;
     int clientes_enviar;
+    QString filename_1;
     int t; //tamaño actual de la barra de progreso
 };
 

@@ -13,7 +13,7 @@ class SocketTest : public QObject
 {
     Q_OBJECT
 public:
-    explicit SocketTest(int port, QString ipp, int origen, int dir, int clientes, QObject *parent=0);
+    explicit SocketTest(int port, QString ipp, int origen, int dir, int clientes, QString f, QObject *parent=0);
 
     ~SocketTest();
 signals:
@@ -22,7 +22,9 @@ signals:
     void datos(QString,int);
     void b_3();
     void inicio_cliente();
+    void reenvio_botones();
 public slots:
+
     void Test();
     void connected();
     void disconnected();
@@ -30,8 +32,9 @@ public slots:
     void readyRead();
     void write(QString filename);
     void send(QByteArray q, QString filename);
-    void leer();
+
     void Arbol(QString ruta_fichero,QString puerto );
+    void setfilename(int filename);
 
 private:
     int  archivos_actuales;
