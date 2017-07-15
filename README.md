@@ -4,7 +4,7 @@ Se ha desarrollado un software que pretende realizar un backup distribuido.
 Por un lado esta el cliente quien podrá enviar o recibir datos, por otro el servidor que hara de intermedio entre
 el cliente oorigen de los datos y el/los cliente/s destino. 
 
-###Funcionamiento
+### Funcionamiento
 
 Para empezar hay que tener en cuenta lo siguiente:
  1. El servidor ha de iniciarse antes que los clientes, estara escuchando en una Ip y un Puerto, internamente se ha diseñado
@@ -14,11 +14,11 @@ Para empezar hay que tener en cuenta lo siguiente:
     a que los datos esten mal introducidos, se le comunica al usuario que no se ha podido inciar sesion, pero no se especifica
     el por que. 
     a- Servidor:
-	![Ventana](/../master/images/servidor.png)
+	![Ventana](/../master/images/servidor.png){:height="100px" width="100px"}
     b- cliente Origen:
-	![Ventana](/../master/images/cliO.png)
+	![Ventana](/../master/images/cliO.png){:height="100px" width="100px"}
     c- cliente Destino:
-	![Ventana](/../master/images/cliD.png)
+	![Ventana](/../master/images/cliD.png){:height="100px" width="100px"}
 
 
 ## Protocolo
